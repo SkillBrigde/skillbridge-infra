@@ -1,0 +1,16 @@
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+CREATE SCHEMA IF NOT EXISTS identity;
+CREATE SCHEMA IF NOT EXISTS profiles;
+CREATE SCHEMA IF NOT EXISTS catalog;
+CREATE SCHEMA IF NOT EXISTS booking;
+CREATE SCHEMA IF NOT EXISTS scheduling;
+CREATE SCHEMA IF NOT EXISTS payments;
+CREATE SCHEMA IF NOT EXISTS learning;
+CREATE SCHEMA IF NOT EXISTS messaging;
+CREATE SCHEMA IF NOT EXISTS reviews;
+CREATE SCHEMA IF NOT EXISTS recommendations;
+CREATE SCHEMA IF NOT EXISTS platform;
+
+COMMENT ON SCHEMA platform IS
+    'Transactional outbox, inbox, idempotency and shared operational records.';
