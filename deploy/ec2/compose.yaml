@@ -1,0 +1,40 @@
+name: skillbridge-ec2
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      db-network:
+        aliases:
+          - skillbride-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: skillbridge-api:main
+    restart: unless-stopped
+    env_file:
+      - ./api.env
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - db-network
+
+networks:
+  db-network:
+    external: true
+    name: skillbride_default
+
+volumes:
+  redis-data:
+    external: true
+    name: "${REDIS_VOLUME_NAME:?REDIS_VOLUME_NAME_is_required}"
