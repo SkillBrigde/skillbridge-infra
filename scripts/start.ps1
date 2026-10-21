@@ -1,3 +1,5 @@
+param([switch]$Optional)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -10,5 +12,12 @@ if (-not (Test-Path -LiteralPath $environmentFile)) {
     Write-Host "Created .env from .env.example (development values only)."
 }
 
-docker compose --project-directory $repositoryRoot --env-file $environmentFile up -d
-docker compose --project-directory $repositoryRoot --env-file $environmentFile ps
+$composeArgs = @("compose", "--project-directory", $repositoryRoot, "--env-file", $environmentFile)
+if ($Optional) {
+    $composeArgs += @("--profile", "optional")
+}
+
+& docker @composeArgs up -d
+if ($LASTEXITCODE -ne 0) { throw "Docker Compose could not start the services." }
+& docker @composeArgs ps
+if ($LASTEXITCODE -ne 0) { throw "Docker Compose could not show service status." }

@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-skillbridge}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skillbridge_dev_only}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
@@ -31,7 +31,7 @@ services:
       - -c
       - exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -42,14 +42,15 @@ services:
     networks: [skillbridge]
 
   rabbitmq:
+    profiles: [optional]
     image: rabbitmq:4-management-alpine
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-skillbridge}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-skillbridge_dev_only}
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${RABBITMQ_PORT:-5672}:5672"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -61,6 +62,7 @@ services:
     networks: [skillbridge]
 
   minio:
+    profiles: [optional]
     image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -68,52 +70,10 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-skillbridge}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-skillbridge_dev_only}
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000"
+      - "${HOST_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio-data:/data
-    networks: [skillbridge]
-
-  api:
-    profiles: [apps]
-    build:
-      context: ../skillbridge-api
-    restart: unless-stopped
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Database: Host=postgres;Port=5432;Database=${POSTGRES_DB:-skillbridge};Username=${POSTGRES_USER:-skillbridge};Password=${POSTGRES_PASSWORD:-skillbridge_dev_only}
-      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD:-skillbridge_dev_only}
-      RabbitMq__Host: rabbitmq
-      RabbitMq__Username: ${RABBITMQ_USER:-skillbridge}
-      RabbitMq__Password: ${RABBITMQ_PASSWORD:-skillbridge_dev_only}
-      BlobStorage__Endpoint: http://minio:9000
-      BlobStorage__AccessKey: ${MINIO_ROOT_USER:-skillbridge}
-      BlobStorage__SecretKey: ${MINIO_ROOT_PASSWORD:-skillbridge_dev_only}
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      minio:
-        condition: service_started
-    networks: [skillbridge]
-
-  web:
-    profiles: [apps]
-    build:
-      context: ../skillbridge-web
-    restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
-    ports:
-      - "3000:3000"
-    depends_on:
-      api:
-        condition: service_started
     networks: [skillbridge]
 
 networks:

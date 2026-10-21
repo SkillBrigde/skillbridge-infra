@@ -23,3 +23,6 @@ jobs:
 
       - name: Validate Docker Compose
         run: docker compose --env-file .env config --quiet
+
+      - name: Validate optional services
+        run: docker compose --env-file .env --profile optional config --quiet
