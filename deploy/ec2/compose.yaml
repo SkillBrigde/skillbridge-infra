@@ -20,7 +20,8 @@ services:
     image: skillbridge-api:main
     restart: unless-stopped
     env_file:
-      - ./api.env
+      - path: ./api.env
+        format: raw
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
